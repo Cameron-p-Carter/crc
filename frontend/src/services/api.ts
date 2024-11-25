@@ -1,5 +1,9 @@
 // src/services/api.ts
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+
+if (!BASE_URL) {
+  throw new Error("NEXT_PUBLIC_API_URL environment variable is not defined");
+}
 
 export const getPersons = async () => {
   const response = await fetch(`${BASE_URL}/persons`);
@@ -10,47 +14,9 @@ export const getPersons = async () => {
 };
 
 export const getPerson = async (id: number) => {
-    const response = await fetch(`${BASE_URL}/persons/${id}`);
-    if (!response.ok) {
-      throw new Error("Failed to fetch person");
-    }
-    return await response.json();
-  };
-  
-export const createPerson = async (person: { name: string; email: string }) => {
-  const response = await fetch(`${BASE_URL}/persons`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(person),
-  });
+  const response = await fetch(`${BASE_URL}/persons/${id}`);
   if (!response.ok) {
-    throw new Error("Failed to create person");
-  }
-  return await response.json();
-};
-
-export const updatePerson = async (id: number, person: { name: string; email: string }) => {
-  const response = await fetch(`${BASE_URL}/persons/${id}`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(person),
-  });
-  if (!response.ok) {
-    throw new Error("Failed to update person");
-  }
-  return await response.json();
-};
-
-export const deletePerson = async (id: number) => {
-  const response = await fetch(`${BASE_URL}/persons/${id}`, {
-    method: "DELETE",
-  });
-  if (!response.ok) {
-    throw new Error("Failed to delete person");
+    throw new Error("Failed to fetch person");
   }
   return await response.json();
 };

@@ -1,3 +1,4 @@
+//this is an example of how to ue a card component (i did not write this of youtube)
 import React from "react";
 
 interface Card {

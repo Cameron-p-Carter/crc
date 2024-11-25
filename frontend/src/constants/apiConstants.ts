@@ -1,1 +1,1 @@
-export const API_BASE_URL = 'http://localhost:4000';
+//if we ever use the same value over and over again put it here and then import this file to the page u want it on
