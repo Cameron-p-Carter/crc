@@ -1,5 +1,5 @@
 const express = require('express');
-const personRoutes = require('./routes/personRoutes');
+const userRoutes = require('./routes/userRoutes');
 
 const app = express();
 
@@ -15,7 +15,7 @@ app.use((req, res, next) => {
 });
 
 //routes
-app.use('/persons', personRoutes);
+app.use('/users', userRoutes);
 
 //test
 app.get('/test', (req, res) => {

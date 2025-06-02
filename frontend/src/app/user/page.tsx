@@ -1,21 +1,21 @@
-import { getPersons } from "@/services/api";
-import { Person } from "@/types/person";
+import { getUsers } from "@/services/api";
+import { User } from "@/types/user";
 import CardComponent from "@/components/CardComponent";
 
 export const revalidate = 60; //enables ISR
 
-export default async function PersonListPage() {
-  let persons: Person[] = [];
+export default async function UserListPage() {
+  let users: User[] = [];
 
   try {
-    persons = await getPersons(); //fetch data at build time
+    users = await getUsers(); //fetch data at build time
   } catch (error) {
-    console.error("Error fetching persons:", error);
+    console.error("Error fetching users:", error);
   }
 
-  if (persons.length === 0) {
+  if (users.length === 0) {
     return (
-        <h1>No Persons Found</h1>
+        <h1>No Users Found</h1>
     );
   }
 
@@ -23,16 +23,16 @@ export default async function PersonListPage() {
     <main className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-100">
       <div className="space-y-4 w-full max-w-2xl">
         <h1 className="text-2xl font-bold text-gray-800 text-center">
-          Person Management
+          User Management
         </h1>
         <div className="space-y-2">
-          {persons.map((person) => (
+          {users.map((user) => (
             <a
-              key={person.id}
-              href={`/person/${person.id}`}
+              key={user.id}
+              href={`/user/${user.id}`}
               className="block"
             >
-              <CardComponent card={person} />
+              <CardComponent card={user} />
             </a>
           ))}
         </div>

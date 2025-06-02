@@ -5,18 +5,18 @@ if (!BASE_URL) {
   throw new Error("NEXT_PUBLIC_API_URL environment variable is not defined");
 }
 
-export const getPersons = async () => {
-  const response = await fetch(`${BASE_URL}/persons`);
+export const getUsers = async () => {
+  const response = await fetch(`${BASE_URL}/users`);
   if (!response.ok) {
-    throw new Error("Failed to fetch persons");
+    throw new Error("Failed to fetch users");
   }
   return await response.json();
 };
 
-export const getPerson = async (id: number) => {
-  const response = await fetch(`${BASE_URL}/persons/${id}`);
+export const getUser = async (id: number) => {
+  const response = await fetch(`${BASE_URL}/users/${id}`);
   if (!response.ok) {
-    throw new Error("Failed to fetch person");
+    throw new Error("Failed to fetch user");
   }
   return await response.json();
 };

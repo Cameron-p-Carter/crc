@@ -13,88 +13,9 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Person {
+model User {
   id              Int            @id @default(autoincrement())
   name            String
   email           String         @unique
-  role            PersonRole // ORGANIZER OR ATTENDEE
-  eventsOrganized Event[]        @relation("OrganizedBy")
-  registrations   Registration[]
-  Notification    Notification[]
 }
 
-enum PersonRole {
-  ORGANIZER
-  ATTENDEE
-}
-
-model Event {
-  id            Int            @id @default(autoincrement())
-  title         String
-  description   String
-  date          DateTime
-  location      String
-  price         Float
-  organiserId   Int
-  organiser     Person         @relation("OrganizedBy", fields: [organiserId], references: [id])
-  registrations Registration[]
-  tickets       Ticket[]
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  Report        Report[]
-}
-
-model Registration {
-  id         Int       @id @default(autoincrement())
-  attendeeId Int
-  attendee   Person    @relation(fields: [attendeeId], references: [id])
-  eventId    Int
-  event      Event     @relation(fields: [eventId], references: [id])
-  status     String // “PENDING”, “CONFIRMED”, “CANCELLED”
-  createdAt  DateTime  @default(now())
-  Ticket     Ticket[]
-  Payment    Payment[]
-}
-
-model Ticket {
-  id             Int          @id @default(autoincrement())
-  registrationId Int
-  registration   Registration @relation(fields: [registrationId], references: [id])
-  type           TicketType
-  pricePaid      Float
-  issuedAt       DateTime     @default(now())
-  Event          Event?       @relation(fields: [eventId], references: [id])
-  eventId        Int?
-}
-
-enum TicketType {
-  GENERAL
-  VIP
-}
-
-model Notification {
-  id          Int      @id @default(autoincrement())
-  recipientId Int
-  recipient   Person   @relation(fields: [recipientId], references: [id])
-  message     String
-  read        Boolean  @default(false)
-  createdAt   DateTime @default(now())
-}
-
-model Payment {
-  id             Int          @id @default(autoincrement())
-  registrationId Int
-  registration   Registration @relation(fields: [registrationId], references: [id])
-  amount         Float
-  status         String // “PENDING”, “PAID”, “REFUNDED”
-  paidAt         DateTime?
-  createdAt      DateTime     @default(now())
-}
-
-model Report {
-  id          Int      @id @default(autoincrement())
-  eventId     Int
-  event       Event    @relation(fields: [eventId], references: [id])
-  generatedAt DateTime @default(now())
-  content     String
-}
