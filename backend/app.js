@@ -1,5 +1,10 @@
 const express = require('express');
 const userRoutes = require('./routes/userRoutes');
+const eventRoutes = require('./routes/eventRoutes');
+const registrationRoutes = require('./routes/registrationRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
+const notificationRoutes = require('./routes/notificationRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 
 const app = express();
 
@@ -16,6 +21,11 @@ app.use((req, res, next) => {
 
 //routes
 app.use('/users', userRoutes);
+app.use('/events', eventRoutes);
+app.use('/registrations', registrationRoutes);
+app.use('/payments', paymentRoutes);
+app.use('/notifications', notificationRoutes);
+app.use('/reports', reportRoutes);
 
 //test
 app.get('/test', (req, res) => {
