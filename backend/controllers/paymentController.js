@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const { processPayment, processRefund } = require('./walletController');
+const { createSystemNotification } = require('./notificationController');
 const prisma = new PrismaClient();
 
 const createPayment = async (req, res) => {
@@ -56,6 +57,19 @@ const createPayment = async (req, res) => {
 
       return payment;
     });
+
+    // Create notifications
+    await createSystemNotification(
+      registration.userId,
+      'Payment Successful',
+      `Your payment of $${amount} for ${registration.event.title} has been processed. Your registration is now confirmed.`
+    );
+
+    await createSystemNotification(
+      registration.event.organizerId,
+      'Payment Received',
+      `Payment received for ${registration.event.title} from ${registration.user.name}.`
+    );
 
     // Get updated registration with payment info
     const updatedRegistration = await prisma.registration.findUnique({
@@ -186,6 +200,19 @@ const processRefundPayment = async (req, res) => {
         }
       });
     });
+
+    // Create notifications
+    await createSystemNotification(
+      registration.userId,
+      'Refund Processed',
+      `Your refund of $${registration.payment.amount} for ${registration.event.title} has been processed.`
+    );
+
+    await createSystemNotification(
+      registration.event.organizerId,
+      'Refund Issued',
+      `Refund issued for ${registration.event.title} to ${registration.user.name}.`
+    );
 
     // Get updated registration with payment info
     const updatedRegistration = await prisma.registration.findUnique({

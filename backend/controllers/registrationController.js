@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const { processRefund } = require('./walletController');
+const { createSystemNotification } = require('./notificationController');
 const prisma = new PrismaClient();
 
 const createRegistration = async (req, res) => {
@@ -89,6 +90,20 @@ const createRegistration = async (req, res) => {
       return registration;
     });
 
+    // Create notification for user
+    await createSystemNotification(
+      userId,
+      'Registration Pending',
+      `Your registration for ${event.title} is pending. Please complete the payment to confirm your spot.`
+    );
+
+    // Create notification for event organizer
+    await createSystemNotification(
+      event.organizerId,
+      'New Registration',
+      `New registration received for ${event.title} from ${registration.user.name}.`
+    );
+
     res.status(201).json(registration);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -163,6 +178,13 @@ const updateRegistrationStatus = async (req, res) => {
       }
     });
 
+    // Create notification for status change
+    await createSystemNotification(
+      registration.userId,
+      'Registration Status Updated',
+      `Your registration for ${registration.event.title} has been ${status.toLowerCase()}.`
+    );
+
     res.status(200).json(registration);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -229,6 +251,19 @@ const cancelRegistration = async (req, res) => {
         });
       }
     });
+
+    // Create notifications
+    await createSystemNotification(
+      registration.userId,
+      'Registration Cancelled',
+      `Your registration for ${registration.event.title} has been cancelled.`
+    );
+
+    await createSystemNotification(
+      registration.event.organizerId,
+      'Registration Cancelled',
+      `A registration for ${registration.event.title} has been cancelled by ${registration.user.name}.`
+    );
 
     // Get updated registration
     const updatedRegistration = await prisma.registration.findUnique({
