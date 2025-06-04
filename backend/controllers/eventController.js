@@ -225,6 +225,7 @@ const searchEvents = async (req, res) => {
       };
     }
 
+    // First get events with their tickets
     const events = await prisma.event.findMany({
       where: whereClause,
       include: {
@@ -239,21 +240,17 @@ const searchEvents = async (req, res) => {
       }
     });
 
-    // Filter by price range if specified
+    // Then filter by price if specified
     let filteredEvents = events;
-    if (minPrice || maxPrice) {
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      const min = minPrice ? parseFloat(minPrice) : 0;
+      const max = maxPrice ? parseFloat(maxPrice) : Number.MAX_VALUE;
+
       filteredEvents = events.filter(event => {
-        const eventMinPrice = Math.min(...event.tickets.map(t => t.price));
-        const eventMaxPrice = Math.max(...event.tickets.map(t => t.price));
-        
-        if (minPrice && maxPrice) {
-          return eventMinPrice >= Number(minPrice) && eventMaxPrice <= Number(maxPrice);
-        } else if (minPrice) {
-          return eventMinPrice >= Number(minPrice);
-        } else if (maxPrice) {
-          return eventMaxPrice <= Number(maxPrice);
-        }
-        return true;
+        // Check if any ticket's price falls within the range
+        return event.tickets.some(ticket => 
+          ticket.price >= min && ticket.price <= max
+        );
       });
     }
 

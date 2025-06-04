@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const { processRefund } = require('./walletController');
 const prisma = new PrismaClient();
 
 const createRegistration = async (req, res) => {
@@ -60,7 +61,8 @@ const createRegistration = async (req, res) => {
             select: {
               id: true,
               name: true,
-              email: true
+              email: true,
+              walletBalance: true
             }
           },
           event: true,
@@ -105,7 +107,8 @@ const getRegistrationsByEvent = async (req, res) => {
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            walletBalance: true
           }
         },
         ticket: true,
@@ -150,7 +153,8 @@ const updateRegistrationStatus = async (req, res) => {
           select: {
             id: true,
             name: true,
-            email: true
+            email: true,
+            walletBalance: true
           }
         },
         event: true,
@@ -173,8 +177,10 @@ const cancelRegistration = async (req, res) => {
     const registration = await prisma.registration.findUnique({
       where: { id: registrationId },
       include: {
+        user: true,
         event: true,
-        ticket: true
+        ticket: true,
+        payment: true
       }
     });
 
@@ -206,20 +212,43 @@ const cancelRegistration = async (req, res) => {
         }
       });
 
-      // If there's a payment, mark it for refund
-      const payment = await prisma.payment.findUnique({
-        where: { registrationId: registrationId }
-      });
+      // If there's a payment, process refund
+      if (registration.payment && registration.payment.status === 'COMPLETED') {
+        // Process refund using wallet
+        await processRefund(
+          prisma,
+          registration.userId,
+          registration.payment.amount,
+          `Refund for cancelled registration - ${registration.event.title}`
+        );
 
-      if (payment) {
+        // Update payment status
         await prisma.payment.update({
-          where: { id: payment.id },
+          where: { id: registration.payment.id },
           data: { status: 'REFUNDED' }
         });
       }
     });
 
-    res.status(204).send();
+    // Get updated registration
+    const updatedRegistration = await prisma.registration.findUnique({
+      where: { id: registrationId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            walletBalance: true
+          }
+        },
+        event: true,
+        ticket: true,
+        payment: true
+      }
+    });
+
+    res.status(200).json(updatedRegistration);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

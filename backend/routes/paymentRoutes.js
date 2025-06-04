@@ -2,7 +2,7 @@ const express = require('express');
 const {
   createPayment,
   getPaymentByRegistration,
-  processRefund,
+  processRefundPayment,
   getPaymentsByEvent
 } = require('../controllers/paymentController');
 
@@ -16,6 +16,6 @@ router.get('/registration/:registrationId', getPaymentByRegistration); // GET /p
 router.get('/event/:eventId', getPaymentsByEvent);                    // GET /payments/event/456
 
 // Process refund
-router.post('/registration/:registrationId/refund', processRefund);   // POST /payments/registration/123/refund
+router.post('/registration/:registrationId/refund', processRefundPayment);   // POST /payments/registration/123/refund
 
 module.exports = router;
