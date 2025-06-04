@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,9 +10,148 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id              Int            @id @default(autoincrement())
-  name            String
-  email           String         @unique
+enum UserRole {
+  ATTENDEE
+  ORGANIZER
 }
 
+enum EventCategory {
+  CONFERENCE
+  CORPORATE_MEETING
+  SOCIAL_GATHERING
+  MUSIC_CONCERT
+  NETWORKING_SESSION
+}
+
+enum RegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  REFUNDED
+  FAILED
+}
+
+enum TicketType {
+  GENERAL
+  VIP
+}
+
+enum ReportType {
+  ATTENDANCE
+  SALES
+  REVENUE
+  REGISTRATION_STATUS
+}
+
+model User {
+  id              Int           @id @default(autoincrement())
+  name            String
+  email           String        @unique
+  password        String        // Simple password storage (no hashing for university project)
+  role            UserRole      @default(ATTENDEE)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Relations
+  organizedEvents Event[]       @relation("EventOrganizer")
+  registrations   Registration[]
+  notifications   Notification[]
+  reports         Report[]      // New relation for reports
+}
+
+model Event {
+  id              Int           @id @default(autoincrement())
+  title           String
+  description     String
+  category        EventCategory
+  startDate       DateTime
+  endDate         DateTime
+  location        String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  
+  // Event capacity and status
+  maxCapacity     Int
+  currentCapacity Int           @default(0)
+  isActive        Boolean       @default(true)
+  
+  // Relations
+  organizer       User          @relation("EventOrganizer", fields: [organizerId], references: [id])
+  organizerId     Int
+  tickets         Ticket[]
+  registrations   Registration[]
+  reports         Report[]      // New relation for reports
+}
+
+model Ticket {
+  id              Int           @id @default(autoincrement())
+  type            TicketType
+  price           Float
+  quantity        Int           // Total available tickets of this type
+  remainingCount  Int           // Current available tickets
+  benefits        String?       // VIP benefits description
+  createdAt       DateTime      @default(now())
+  
+  // Relations
+  event           Event         @relation(fields: [eventId], references: [id])
+  eventId         Int
+  registrations   Registration[]
+}
+
+model Registration {
+  id              Int               @id @default(autoincrement())
+  status          RegistrationStatus @default(PENDING)
+  registrationDate DateTime         @default(now())
+  
+  // Relations
+  user            User             @relation(fields: [userId], references: [id])
+  userId          Int
+  event           Event            @relation(fields: [eventId], references: [id])
+  eventId         Int
+  ticket          Ticket           @relation(fields: [ticketId], references: [id])
+  ticketId        Int
+  payment         Payment?
+}
+
+model Payment {
+  id              Int           @id @default(autoincrement())
+  amount          Float
+  status          PaymentStatus @default(PENDING)
+  paymentDate     DateTime      @default(now())
+  
+  // Relations
+  registration    Registration  @relation(fields: [registrationId], references: [id])
+  registrationId  Int          @unique  // One-to-one with Registration
+}
+
+model Notification {
+  id              Int           @id @default(autoincrement())
+  title           String
+  message         String
+  isRead          Boolean       @default(false)
+  createdAt       DateTime      @default(now())
+  
+  // Relations
+  user            User          @relation(fields: [userId], references: [id])
+  userId          Int
+}
+
+model Report {
+  id              Int           @id @default(autoincrement())
+  type            ReportType
+  title           String
+  parameters      Json          // Flexible storage for report parameters
+  createdAt       DateTime      @default(now())
+  
+  // Relations
+  event           Event         @relation(fields: [eventId], references: [id])
+  eventId         Int
+  organizer       User          @relation(fields: [organizerId], references: [id])
+  organizerId     Int
+}
