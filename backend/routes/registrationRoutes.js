@@ -1,6 +1,7 @@
 const express = require('express');
 const {
   createRegistration,
+  getRegistrationById,
   getRegistrationsByEvent,
   getRegistrationsByUser,
   updateRegistrationStatus,
@@ -11,6 +12,9 @@ const router = express.Router();
 
 // Create new registration
 router.post('/', createRegistration);                    // POST /registrations
+
+// Get registration by ID
+router.get('/:id', getRegistrationById);                // GET /registrations/123
 
 // Get registrations by event or user
 router.get('/event/:eventId', getRegistrationsByEvent); // GET /registrations/event/123

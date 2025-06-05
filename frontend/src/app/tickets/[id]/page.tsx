@@ -35,8 +35,7 @@ export default function TicketPage() {
 
       setRegistration(data);
     } catch (err) {
-      setError('Failed to load ticket');
-      console.error(err);
+      setError('Failed to load ticket. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -68,7 +67,7 @@ export default function TicketPage() {
 
   if (error || !registration) {
     return (
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-2xl mx-auto p-6">
         <div className="bg-red-100 text-red-700 p-4 rounded">
           {error || 'Ticket not found'}
         </div>
@@ -83,7 +82,7 @@ export default function TicketPage() {
   }
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto p-6">
       <div className="bg-white rounded-lg shadow-lg overflow-hidden">
         <div className="p-6">
           <div className="text-center mb-6">

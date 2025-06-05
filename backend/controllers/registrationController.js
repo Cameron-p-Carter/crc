@@ -110,6 +110,35 @@ const createRegistration = async (req, res) => {
   }
 };
 
+const getRegistrationById = async (req, res) => {
+  try {
+    const registrationId = Number(req.params.id);
+    const registration = await prisma.registration.findUnique({
+      where: { id: registrationId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        },
+        event: true,
+        ticket: true,
+        payment: true
+      }
+    });
+
+    if (!registration) {
+      return res.status(404).json({ message: 'Registration not found' });
+    }
+
+    res.status(200).json(registration);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 const getRegistrationsByEvent = async (req, res) => {
   try {
     const eventId = Number(req.params.eventId);
@@ -291,6 +320,7 @@ const cancelRegistration = async (req, res) => {
 
 module.exports = {
   createRegistration,
+  getRegistrationById,
   getRegistrationsByEvent,
   getRegistrationsByUser,
   updateRegistrationStatus,
