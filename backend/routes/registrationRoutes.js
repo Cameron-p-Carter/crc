@@ -13,12 +13,12 @@ const router = express.Router();
 // Create new registration
 router.post('/', createRegistration);                    // POST /registrations
 
-// Get registration by ID
-router.get('/:id', getRegistrationById);                // GET /registrations/123
-
 // Get registrations by event or user
 router.get('/event/:eventId', getRegistrationsByEvent); // GET /registrations/event/123
 router.get('/user/:userId', getRegistrationsByUser);    // GET /registrations/user/456
+
+// Get registration by ID (must come after other GET routes)
+router.get('/:id', getRegistrationById);                // GET /registrations/123
 
 // Update registration status
 router.put('/:id/status', updateRegistrationStatus);    // PUT /registrations/789/status

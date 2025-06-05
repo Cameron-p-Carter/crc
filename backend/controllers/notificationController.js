@@ -41,13 +41,14 @@ const getUserNotifications = async (req, res) => {
 const markNotificationAsRead = async (req, res) => {
   try {
     const notificationId = Number(req.params.id);
+    const { isRead = true } = req.body; // Default to true if not provided
 
     const notification = await prisma.notification.update({
       where: {
         id: notificationId
       },
       data: {
-        isRead: true
+        isRead
       }
     });
 

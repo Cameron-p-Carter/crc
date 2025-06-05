@@ -2,24 +2,30 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { UserRole } from '@/types/user';
-import { getWalletBalance } from '@/services/api';
+import { getUserNotifications } from '@/services/api';
 
 export default function Navbar() {
   const { user, logout, isAuthenticated } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
-  const [walletBalance, setWalletBalance] = useState<number | undefined>(user?.walletBalance);
+  const [unreadCount, setUnreadCount] = useState(0);
 
-  // Refresh wallet balance when returning from wallet page
   useEffect(() => {
-    if (isAuthenticated && user && !pathname.startsWith('/wallet/')) {
-      getWalletBalance(user.id).then(data => {
-        setWalletBalance(data.balance);
-      });
+    if (isAuthenticated && user) {
+      loadNotifications();
     }
-  }, [pathname, isAuthenticated, user]);
+  }, [isAuthenticated, user]);
+
+  const loadNotifications = async () => {
+    try {
+      const notifications = await getUserNotifications(user!.id);
+      const unread = notifications.filter(n => !n.isRead).length;
+      setUnreadCount(unread);
+    } catch (err) {
+      console.error('Failed to load notifications');
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -66,9 +72,20 @@ export default function Navbar() {
                   className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md flex items-center"
                 >
                   <span>Wallet</span>
-                  {walletBalance !== undefined && (
+                  {user?.walletBalance !== undefined && (
                     <span className="ml-2 px-2 py-1 bg-gray-100 rounded text-sm">
-                      ${walletBalance.toFixed(2)}
+                      ${user.walletBalance.toFixed(2)}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => router.push('/notifications')}
+                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md flex items-center"
+                >
+                  <span>Notifications</span>
+                  {unreadCount > 0 && (
+                    <span className="ml-2 px-2 py-0.5 bg-red-500 text-white rounded-full text-xs">
+                      {unreadCount}
                     </span>
                   )}
                 </button>

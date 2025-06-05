@@ -2,6 +2,7 @@
 import { LoginRequest, RegisterRequest, User, LoginResponse } from '../types/user';
 import { Event, CreateEventRequest, UpdateEventRequest, SearchEventsParams } from '../types/event';
 import { Transaction, WalletBalance, DepositRequest, DepositResponse } from '../types/wallet';
+import { Notification } from '../types/notification';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -271,4 +272,32 @@ export const createPayment = async (data: CreatePaymentRequest): Promise<Payment
   }
 
   return await response.json();
+};
+
+// Notification endpoints
+export const getUserNotifications = async (userId: number): Promise<Notification[]> => {
+  const response = await fetch(`${BASE_URL}/notifications/user/${userId}`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch notifications");
+  }
+  return await response.json();
+};
+
+export const markNotificationAsRead = async (notificationId: number): Promise<Notification> => {
+  const response = await fetch(`${BASE_URL}/notifications/${notificationId}/read`, {
+    method: 'PUT'
+  });
+  if (!response.ok) {
+    throw new Error("Failed to mark notification as read");
+  }
+  return await response.json();
+};
+
+export const markAllNotificationsAsRead = async (userId: number): Promise<void> => {
+  const response = await fetch(`${BASE_URL}/notifications/user/${userId}/read-all`, {
+    method: 'PUT'
+  });
+  if (!response.ok) {
+    throw new Error("Failed to mark all notifications as read");
+  }
 };
