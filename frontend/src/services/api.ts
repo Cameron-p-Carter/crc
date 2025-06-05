@@ -242,3 +242,33 @@ export const getTransactionHistory = async (userId: number): Promise<Transaction
   }
   return await response.json();
 };
+
+// Payment endpoints
+export interface CreatePaymentRequest {
+  registrationId: number;
+}
+
+export interface Payment {
+  id: number;
+  registrationId: number;
+  amount: number;
+  status: string;
+  paymentDate: string;
+}
+
+export const createPayment = async (data: CreatePaymentRequest): Promise<Payment> => {
+  const response = await fetch(`${BASE_URL}/payments`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to process payment');
+  }
+
+  return await response.json();
+};

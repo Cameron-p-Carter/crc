@@ -1,12 +1,25 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { UserRole } from '@/types/user';
+import { getWalletBalance } from '@/services/api';
 
 export default function Navbar() {
   const { user, logout, isAuthenticated } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const [walletBalance, setWalletBalance] = useState<number | undefined>(user?.walletBalance);
+
+  // Refresh wallet balance when returning from wallet page
+  useEffect(() => {
+    if (isAuthenticated && user && !pathname.startsWith('/wallet/')) {
+      getWalletBalance(user.id).then(data => {
+        setWalletBalance(data.balance);
+      });
+    }
+  }, [pathname, isAuthenticated, user]);
 
   const handleLogout = () => {
     logout();
@@ -53,9 +66,9 @@ export default function Navbar() {
                   className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md flex items-center"
                 >
                   <span>Wallet</span>
-                  {user?.walletBalance !== undefined && (
+                  {walletBalance !== undefined && (
                     <span className="ml-2 px-2 py-1 bg-gray-100 rounded text-sm">
-                      ${user.walletBalance.toFixed(2)}
+                      ${walletBalance.toFixed(2)}
                     </span>
                   )}
                 </button>

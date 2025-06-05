@@ -71,7 +71,8 @@ export default function RegisterEventPage() {
     }
 
     if (walletBalance < selectedTicket.price) {
-      setError(`Insufficient funds. Please add at least $${(selectedTicket.price - walletBalance).toFixed(2)} to your wallet`);
+      const amountNeeded = (selectedTicket.price - walletBalance).toFixed(2);
+      router.push(`/wallet/${user.id}?returnUrl=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
 
@@ -79,15 +80,15 @@ export default function RegisterEventPage() {
       setRegistering(true);
       setError('');
 
-      // Create registration (payment is handled automatically on the backend)
-      await createRegistration({
+      // Create registration
+      const registration = await createRegistration({
         userId: user.id,
         eventId: event.id,
         ticketId: selectedTicketId
       });
 
-      // Redirect to success page
-      router.push(`/events/${event.id}/register/success`);
+      // Redirect to registrations page where user can complete payment
+      router.push('/user/registrations');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to complete registration');
     } finally {
@@ -120,7 +121,7 @@ export default function RegisterEventPage() {
   const insufficientFunds = selectedTicket && walletBalance < selectedTicket.price;
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto p-6">
       <h1 className="text-3xl font-bold text-gray-900 mb-6">Register for Event</h1>
 
       <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
@@ -199,7 +200,7 @@ export default function RegisterEventPage() {
         </div>
         {insufficientFunds && (
           <button
-            onClick={() => router.push(`/wallet/${user.id}`)}
+            onClick={() => router.push(`/wallet/${user.id}?returnUrl=${encodeURIComponent(window.location.pathname)}`)}
             className="mt-4 w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
           >
             Add Funds to Wallet

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Registration, getUserRegistrations } from '@/services/api';
+import { Registration, getUserRegistrations, getWalletBalance, createPayment } from '@/services/api';
 
 export default function UserRegistrationsPage() {
   const router = useRouter();
@@ -11,6 +11,8 @@ export default function UserRegistrationsPage() {
   const [registrations, setRegistrations] = useState<Registration[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>('');
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+  const [processing, setProcessing] = useState<number | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -18,21 +20,45 @@ export default function UserRegistrationsPage() {
       return;
     }
 
-    loadRegistrations();
+    loadData();
   }, [isAuthenticated, router]);
 
-  const loadRegistrations = async () => {
+  const loadData = async () => {
     if (!user?.id) return;
     
     try {
       setLoading(true);
-      const data = await getUserRegistrations(user.id);
-      setRegistrations(data);
+      const [registrationsData, balanceData] = await Promise.all([
+        getUserRegistrations(user.id),
+        getWalletBalance(user.id)
+      ]);
+      setRegistrations(registrationsData);
+      setWalletBalance(balanceData.balance);
     } catch (err) {
-      setError('Failed to load registrations');
+      setError('Failed to load data');
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePayment = async (registration: Registration) => {
+    if (!user) return;
+
+    if (walletBalance < registration.ticket.price) {
+      const amountNeeded = (registration.ticket.price - walletBalance).toFixed(2);
+      router.push(`/wallet/${user.id}?returnUrl=${encodeURIComponent('/user/registrations')}`);
+      return;
+    }
+
+    try {
+      setProcessing(registration.id);
+      await createPayment({ registrationId: registration.id });
+      await loadData(); // Refresh data after payment
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to process payment');
+    } finally {
+      setProcessing(null);
     }
   };
 
@@ -74,8 +100,14 @@ export default function UserRegistrationsPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold text-gray-900 mb-6">My Registrations</h1>
+    <div className="max-w-6xl mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">My Registrations</h1>
+        <div className="text-right">
+          <p className="text-sm text-gray-600">Wallet Balance</p>
+          <p className="text-xl font-bold text-blue-600">${walletBalance.toFixed(2)}</p>
+        </div>
+      </div>
 
       {error && (
         <div className="bg-red-100 text-red-700 p-4 rounded mb-6">
@@ -153,6 +185,15 @@ export default function UserRegistrationsPage() {
                           Date: {formatDate(registration.payment.paymentDate)}
                         </p>
                       </>
+                    ) : registration.status === 'PENDING' ? (
+                      <div className="space-y-2">
+                        <p className="text-gray-600">Payment required</p>
+                        {walletBalance < registration.ticket.price && (
+                          <p className="text-sm text-red-600">
+                            Insufficient funds. Add ${(registration.ticket.price - walletBalance).toFixed(2)} more to your wallet.
+                          </p>
+                        )}
+                      </div>
                     ) : (
                       <p className="text-gray-600">No payment information</p>
                     )}
@@ -172,6 +213,23 @@ export default function UserRegistrationsPage() {
                       className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                     >
                       View Ticket
+                    </button>
+                  )}
+                  {registration.status === 'PENDING' && (
+                    <button
+                      onClick={() => handlePayment(registration)}
+                      disabled={processing === registration.id || walletBalance < registration.ticket.price}
+                      className={`px-4 py-2 rounded ${
+                        walletBalance < registration.ticket.price
+                          ? 'bg-green-500 text-white hover:bg-green-600'
+                          : 'bg-blue-500 text-white hover:bg-blue-600'
+                      } disabled:bg-gray-300`}
+                    >
+                      {processing === registration.id
+                        ? 'Processing...'
+                        : walletBalance < registration.ticket.price
+                        ? 'Add Funds'
+                        : 'Pay Now'}
                     </button>
                   )}
                 </div>

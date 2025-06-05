@@ -1,17 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Event } from '@/types/event';
-import { getEvent } from '@/services/api';
 
-export default function RegistrationSuccessPage() {
+export default function RegisterSuccessPage() {
   const params = useParams();
   const router = useRouter();
   const { isAuthenticated } = useAuth();
-  const [event, setEvent] = useState<Event | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -19,31 +15,16 @@ export default function RegistrationSuccessPage() {
       return;
     }
 
-    loadEvent();
-  }, [isAuthenticated, params.id, router]);
+    // Auto-redirect after 3 seconds
+    const timeout = setTimeout(() => {
+      router.push('/user/registrations');
+    }, 3000);
 
-  const loadEvent = async () => {
-    try {
-      setLoading(true);
-      const data = await getEvent(Number(params.id));
-      setEvent(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    return () => clearTimeout(timeout);
+  }, [isAuthenticated, router]);
 
   if (!isAuthenticated) {
     return null;
-  }
-
-  if (loading) {
-    return (
-      <div className="text-center py-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
-      </div>
-    );
   }
 
   return (
@@ -70,31 +51,28 @@ export default function RegistrationSuccessPage() {
         </h1>
 
         <p className="text-lg text-gray-600 mb-8">
-          {event ? (
-            <>
-              You have successfully registered for <span className="font-semibold">{event.title}</span>.
-              A confirmation has been sent to your email.
-            </>
-          ) : (
-            'Your registration has been confirmed.'
-          )}
+          Your registration has been confirmed and payment processed.
         </p>
 
         <div className="space-y-4">
           <button
-            onClick={() => router.push('/events')}
-            className="block w-full px-6 py-3 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            Browse More Events
-          </button>
-
-          <button
             onClick={() => router.push('/user/registrations')}
-            className="block w-full px-6 py-3 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+            className="block w-full px-6 py-3 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             View My Registrations
           </button>
+
+          <button
+            onClick={() => router.push('/events')}
+            className="block w-full px-6 py-3 bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+          >
+            Browse More Events
+          </button>
         </div>
+
+        <p className="text-sm text-gray-500 mt-6">
+          Redirecting to your registrations in a few seconds...
+        </p>
       </div>
     </div>
   );
