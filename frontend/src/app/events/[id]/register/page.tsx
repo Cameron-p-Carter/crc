@@ -4,8 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Event } from '@/types/event';
-import { getEvent } from '@/services/api';
-import { createRegistration, createPayment } from '@/services/api';
+import { getEvent, createRegistration, getWalletBalance } from '@/services/api';
 
 export default function RegisterEventPage() {
   const params = useParams();
@@ -17,6 +16,7 @@ export default function RegisterEventPage() {
   const [registering, setRegistering] = useState(false);
   const [error, setError] = useState<string>('');
   const [selectedTicketId, setSelectedTicketId] = useState<number | null>(null);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -29,21 +29,25 @@ export default function RegisterEventPage() {
       setSelectedTicketId(Number(ticketId));
     }
 
-    loadEvent();
+    loadData();
   }, [isAuthenticated, params.id, router, searchParams]);
 
-  const loadEvent = async () => {
+  const loadData = async () => {
     try {
       setLoading(true);
-      const data = await getEvent(Number(params.id));
+      const [eventData, balanceData] = await Promise.all([
+        getEvent(Number(params.id)),
+        getWalletBalance(user!.id)
+      ]);
       
       // Don't allow organizer to register for their own event
-      if (user?.id === data.organizerId) {
-        router.push(`/events/${data.id}`);
+      if (user?.id === eventData.organizerId) {
+        router.push(`/events/${eventData.id}`);
         return;
       }
 
-      setEvent(data);
+      setEvent(eventData);
+      setWalletBalance(balanceData.balance);
     } catch (err) {
       setError('Failed to load event');
       console.error(err);
@@ -66,8 +70,8 @@ export default function RegisterEventPage() {
       return;
     }
 
-    if (user.walletBalance < selectedTicket.price) {
-      setError('Insufficient funds in wallet');
+    if (walletBalance < selectedTicket.price) {
+      setError(`Insufficient funds. Please add at least $${(selectedTicket.price - walletBalance).toFixed(2)} to your wallet`);
       return;
     }
 
@@ -75,16 +79,11 @@ export default function RegisterEventPage() {
       setRegistering(true);
       setError('');
 
-      // Create registration
-      const registration = await createRegistration({
+      // Create registration (payment is handled automatically on the backend)
+      await createRegistration({
         userId: user.id,
         eventId: event.id,
         ticketId: selectedTicketId
-      });
-
-      // Process payment
-      await createPayment({
-        registrationId: registration.id
       });
 
       // Redirect to success page
@@ -116,6 +115,9 @@ export default function RegisterEventPage() {
       </div>
     );
   }
+
+  const selectedTicket = event.tickets.find(t => t.id === selectedTicketId);
+  const insufficientFunds = selectedTicket && walletBalance < selectedTicket.price;
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -175,7 +177,7 @@ export default function RegisterEventPage() {
         <div className="space-y-2">
           <div className="flex justify-between text-gray-600">
             <span>Your wallet balance</span>
-            <span>${user.walletBalance}</span>
+            <span>${walletBalance.toFixed(2)}</span>
           </div>
           <div className="flex justify-between font-semibold">
             <span>Ticket price</span>
@@ -186,7 +188,23 @@ export default function RegisterEventPage() {
               }
             </span>
           </div>
+          {insufficientFunds && (
+            <div className="flex justify-between text-red-600 text-sm">
+              <span>Additional funds needed</span>
+              <span>
+                ${(selectedTicket.price - walletBalance).toFixed(2)}
+              </span>
+            </div>
+          )}
         </div>
+        {insufficientFunds && (
+          <button
+            onClick={() => router.push(`/wallet/${user.id}`)}
+            className="mt-4 w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+          >
+            Add Funds to Wallet
+          </button>
+        )}
       </div>
 
       <div className="flex justify-end space-x-4">
@@ -199,7 +217,7 @@ export default function RegisterEventPage() {
         </button>
         <button
           onClick={handleRegister}
-          disabled={!selectedTicketId || registering}
+          disabled={!selectedTicketId || registering || insufficientFunds}
           className="px-6 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:bg-gray-300"
         >
           {registering ? 'Processing...' : 'Complete Registration'}

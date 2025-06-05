@@ -1,6 +1,7 @@
 // src/services/api.ts
 import { LoginRequest, RegisterRequest, User, LoginResponse } from '../types/user';
 import { Event, CreateEventRequest, UpdateEventRequest, SearchEventsParams } from '../types/event';
+import { Transaction, WalletBalance, DepositRequest, DepositResponse } from '../types/wallet';
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -64,14 +65,6 @@ export const getAllEvents = async (): Promise<Event[]> => {
   const response = await fetch(`${BASE_URL}/events`);
   if (!response.ok) {
     throw new Error("Failed to fetch events");
-  }
-  return await response.json();
-};
-
-export const getOrganizerEvents = async (organizerId: number): Promise<Event[]> => {
-  const response = await fetch(`${BASE_URL}/events/organizer/${organizerId}`);
-  if (!response.ok) {
-    throw new Error("Failed to fetch organizer events");
   }
   return await response.json();
 };
@@ -216,21 +209,17 @@ export const getEventRegistrations = async (eventId: number): Promise<Registrati
   return await response.json();
 };
 
-// Payment endpoints
-export interface CreatePaymentRequest {
-  registrationId: number;
-}
+// Wallet endpoints
+export const getWalletBalance = async (userId: number): Promise<WalletBalance> => {
+  const response = await fetch(`${BASE_URL}/wallet/${userId}/balance`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch wallet balance");
+  }
+  return await response.json();
+};
 
-export interface Payment {
-  id: number;
-  registrationId: number;
-  amount: number;
-  status: string;
-  paymentDate: string;
-}
-
-export const createPayment = async (data: CreatePaymentRequest): Promise<Payment> => {
-  const response = await fetch(`${BASE_URL}/payments`, {
+export const depositToWallet = async (userId: number, data: DepositRequest): Promise<DepositResponse> => {
+  const response = await fetch(`${BASE_URL}/wallet/${userId}/deposit`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -240,8 +229,16 @@ export const createPayment = async (data: CreatePaymentRequest): Promise<Payment
 
   if (!response.ok) {
     const error = await response.json();
-    throw new Error(error.message || 'Failed to process payment');
+    throw new Error(error.message || 'Failed to deposit to wallet');
   }
 
+  return await response.json();
+};
+
+export const getTransactionHistory = async (userId: number): Promise<Transaction[]> => {
+  const response = await fetch(`${BASE_URL}/wallet/${userId}/transactions`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch transaction history");
+  }
   return await response.json();
 };

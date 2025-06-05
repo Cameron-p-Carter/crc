@@ -50,9 +50,14 @@ export default function Navbar() {
                 </button>
                 <button
                   onClick={() => router.push(`/wallet/${user?.id}`)}
-                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md"
+                  className="text-gray-700 hover:text-gray-900 px-3 py-2 rounded-md flex items-center"
                 >
-                  Wallet (${user?.walletBalance?.toFixed(2)})
+                  <span>Wallet</span>
+                  {user?.walletBalance !== undefined && (
+                    <span className="ml-2 px-2 py-1 bg-gray-100 rounded text-sm">
+                      ${user.walletBalance.toFixed(2)}
+                    </span>
+                  )}
                 </button>
               </div>
             )}
