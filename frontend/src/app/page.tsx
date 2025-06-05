@@ -1,7 +1,5 @@
-'use client';
+import HomeContent from '@/components/home/HomeContent';
 
 export default function HomePage() {
-  return (
-      <h1 className="text-2xl font-bold">CRC</h1>
-  );
+  return <HomeContent />;
 }
